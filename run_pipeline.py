@@ -3,87 +3,80 @@ run_pipeline.py
 ---------------
 Master pipeline orchestrator for ChurnShield.
 
-Runs all phases in order. Each phase is a self-contained module
-that can also be run independently. This script is the single
-entry point to reproduce the entire pipeline end-to-end.
+Each phase adds one step here. Running this file executes the
+complete pipeline end-to-end in the correct order.
 
 Usage:
-    python run_pipeline.py              # Run all phases
-    python run_pipeline.py --phase 1    # Run only Phase 1
-
-Phases:
-    1 — Data Ingestion      (src/ingestion.py)
-    2 — EDA & Features      (src/eda.py, src/features.py)      [coming soon]
-    3 — Model Training      (src/train.py, src/evaluate.py)    [coming soon]
-    4 — SHAP Explainability (src/explain.py)                   [coming soon]
+    python run_pipeline.py              # run all phases
+    python run_pipeline.py --phase 1   # run a specific phase only
+    python run_pipeline.py --phase 2   # run Phase 2 only
 """
 
-import argparse
 import sys
-import time
-from pathlib import Path
-
-# Ensure project root is on the path so `src.*` imports work
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
+import argparse
+import traceback
 from src.logger import get_logger
 
 log = get_logger("pipeline")
 
 
 def run_phase_1():
-    """Phase 1: Data ingestion — CSV → SQLite + processed CSV."""
     from src.ingestion import run_ingestion
     run_ingestion()
 
 
-# ── Registry: add new phases here as the project grows ───────────────────────
+def run_phase_2():
+    from src.eda import run_eda
+    from src.features import run_feature_engineering
+    run_eda()
+    run_feature_engineering()
+
+
+# ── Phase registry ────────────────────────────────────────────────────────────
 PHASES = {
-    1: ("Data Ingestion",       run_phase_1),
-    # 2: ("EDA & Features",     run_phase_2),   ← Phase 2 added here
-    # 3: ("Model Training",     run_phase_3),   ← Phase 3 added here
-    # 4: ("SHAP Explainability",run_phase_4),   ← Phase 4 added here
+    1: ("Data Ingestion",            run_phase_1),
+    2: ("EDA & Feature Engineering", run_phase_2),
+    # 3: ("Model Training",           run_phase_3),   # added in Phase 3
+    # 4: ("SHAP Explainability",      run_phase_4),   # added in Phase 4
 }
 
 
-def main(target_phase: int = None):
-    start_time = time.time()
-
-    log.info("╔══════════════════════════════════════════════════╗")
-    log.info("║        ChurnShield — ML Pipeline Runner          ║")
-    log.info("║        card-retention-intelligence               ║")
-    log.info("╚══════════════════════════════════════════════════╝")
-
-    phases_to_run = (
-        {target_phase: PHASES[target_phase]}
-        if target_phase and target_phase in PHASES
-        else PHASES
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="ChurnShield ML Pipeline — card-retention-intelligence"
     )
+    parser.add_argument(
+        "--phase",
+        type=int,
+        choices=list(PHASES.keys()),
+        default=None,
+        help="Run a specific phase only. Omit to run all phases.",
+    )
+    return parser.parse_args()
 
-    if target_phase and target_phase not in PHASES:
-        log.error(f"Phase {target_phase} not found. Available: {list(PHASES.keys())}")
-        sys.exit(1)
 
-    for phase_num, (phase_name, phase_fn) in phases_to_run.items():
+def main():
+    args   = parse_args()
+    phases = {args.phase: PHASES[args.phase]} if args.phase else PHASES
+
+    log.info("╔══════════════════════════════════════════════════════╗")
+    log.info("║       ChurnShield — ML Pipeline Starting             ║")
+    log.info("╚══════════════════════════════════════════════════════╝")
+
+    for phase_num, (phase_name, phase_fn) in phases.items():
         log.info(f"▶  Running Phase {phase_num}: {phase_name}")
-        phase_start = time.time()
         try:
             phase_fn()
-            elapsed = time.time() - phase_start
-            log.info(f"✓  Phase {phase_num} completed in {elapsed:.2f}s")
+            log.info(f"✓  Phase {phase_num} completed successfully\n")
         except Exception as e:
             log.error(f"✗  Phase {phase_num} failed: {e}")
-            raise
+            log.debug(traceback.format_exc())
+            sys.exit(1)
 
-    total = time.time() - start_time
-    log.info(f"Pipeline finished in {total:.2f}s")
+    log.info("╔══════════════════════════════════════════════════════╗")
+    log.info("║       Pipeline finished — all phases complete ✓      ║")
+    log.info("╚══════════════════════════════════════════════════════╝")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="ChurnShield ML Pipeline")
-    parser.add_argument(
-        "--phase", type=int, default=None,
-        help="Run a specific phase only (e.g. --phase 1)"
-    )
-    args = parser.parse_args()
-    main(target_phase=args.phase)
+    main()

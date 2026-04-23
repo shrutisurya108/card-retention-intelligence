@@ -5,14 +5,16 @@
 # picking up system-level binaries like pytest from Python 3.14.
 #
 # Usage:
-#   make test        → run all tests
-#   make ingest      → run Phase 1 ingestion
-#   make pipeline    → run full pipeline
-#   make dashboard   → launch Streamlit app
-#   make lint        → check code style
-#   make clean       → remove generated artifacts
+#   make test          → run all tests
+#   make test-phase1   → run Phase 1 tests only
+#   make test-phase2   → run Phase 2 tests only
+#   make ingest        → run Phase 1 ingestion
+#   make eda           → run Phase 2 EDA + feature engineering
+#   make pipeline      → run full pipeline (all phases)
+#   make dashboard     → launch Streamlit app
+#   make clean         → remove generated artifacts
 
-.PHONY: test ingest pipeline dashboard lint clean
+.PHONY: test test-phase1 test-phase2 ingest eda pipeline dashboard clean
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 test:
@@ -21,9 +23,15 @@ test:
 test-phase1:
 	python -m pytest tests/test_ingestion.py -v
 
+test-phase2:
+	python -m pytest tests/test_features.py -v
+
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 ingest:
 	python run_pipeline.py --phase 1
+
+eda:
+	python run_pipeline.py --phase 2
 
 pipeline:
 	python run_pipeline.py
@@ -31,10 +39,6 @@ pipeline:
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 dashboard:
 	python -m streamlit run dashboard/app.py
-
-# ── Code quality ──────────────────────────────────────────────────────────────
-lint:
-	python -m flake8 src/ --max-line-length=100 --ignore=E203,W503
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 clean:
