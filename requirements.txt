@@ -1,28 +1,32 @@
-# Data
+# requirements.txt
+# Pinned for Python 3.11.9 (pyenv)
+# Install with: pip install -r requirements.txt
+
+# ── Data ──────────────────────────────────────────────────────────────────────
 pandas==2.2.2
 numpy==1.26.4
 SQLAlchemy==2.0.30
 
-# ML
+# ── Machine Learning ──────────────────────────────────────────────────────────
 scikit-learn==1.5.0
 xgboost==2.0.3
 imbalanced-learn==0.12.3
 
-# Explainability
+# ── Explainability ────────────────────────────────────────────────────────────
 shap==0.45.1
 
-# Visualization
+# ── Visualisation ─────────────────────────────────────────────────────────────
 matplotlib==3.9.0
 seaborn==0.13.2
 plotly==5.22.0
 
-# Dashboard
+# ── Dashboard ─────────────────────────────────────────────────────────────────
 streamlit==1.35.0
 
-# Testing
+# ── Testing ───────────────────────────────────────────────────────────────────
 pytest==8.2.0
 
-# Utilities
+# ── Utilities ─────────────────────────────────────────────────────────────────
 joblib==1.4.2
 python-dotenv==1.0.1
 loguru==0.7.2
