@@ -1,20 +1,16 @@
-# ── Data & Database ───────────────────────────────────────────────
+# Raw data (large, not needed by dashboard)
 data/raw/
-data/processed/
+data/processed/train_set.csv
+data/processed/customers_features.csv
+
+# Database
 database/
 *.db
 
-# ── Models (large binary files) ───────────────────────────────────
-models/*.pkl
-models/*.joblib
-
-# ── Outputs (generated — not source code) ─────────────────────────
-outputs/
-
-# ── Logs ──────────────────────────────────────────────────────────
+# Logs
 logs/
 
-# ── Python ────────────────────────────────────────────────────────
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -24,14 +20,13 @@ __pycache__/
 dist/
 build/
 
-# ── Jupyter ───────────────────────────────────────────────────────
+# Jupyter
 .ipynb_checkpoints/
 
-# ── OS ────────────────────────────────────────────────────────────
+# OS
 .DS_Store
 Thumbs.db
 
-# ── Environment ───────────────────────────────────────────────────
+# Environment
 .env
 *.env
-.python-version

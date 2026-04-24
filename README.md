@@ -151,7 +151,3 @@ milliseconds; recomputing for 2,026 samples takes 30 seconds.
 in one fold. Stratified guarantees each fold reflects the true class distribution.
 
 ---
-
-## License
-
-MIT
