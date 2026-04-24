@@ -8,6 +8,7 @@ Usage:
     python run_pipeline.py --phase 1   # Phase 1 only
     python run_pipeline.py --phase 2   # Phase 2 only
     python run_pipeline.py --phase 3   # Phase 3 only
+    python run_pipeline.py --phase 4   # Phase 4 only
 """
 
 import sys
@@ -37,12 +38,18 @@ def run_phase_3():
     run_evaluation()
 
 
+def run_phase_4():
+    from src.explain import run_explanation
+    run_explanation()
+
+
 # ── Phase registry ────────────────────────────────────────────────────────────
 PHASES = {
-    1: ("Data Ingestion",            run_phase_1),
-    2: ("EDA & Feature Engineering", run_phase_2),
+    1: ("Data Ingestion",              run_phase_1),
+    2: ("EDA & Feature Engineering",   run_phase_2),
     3: ("Model Training & Evaluation", run_phase_3),
-    # 4: ("SHAP Explainability",      run_phase_4),   # added in Phase 4
+    4: ("SHAP Explainability",         run_phase_4),
+    # 5: ("Streamlit Dashboard",        run_phase_5),  # added in Phase 5
 }
 
 

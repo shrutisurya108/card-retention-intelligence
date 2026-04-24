@@ -8,14 +8,17 @@
 #   make test-phase1    → Phase 1 tests only
 #   make test-phase2    → Phase 2 tests only
 #   make test-phase3    → Phase 3 tests only
+#   make test-phase4    → Phase 4 tests only
 #   make ingest         → run Phase 1
 #   make eda            → run Phase 2
 #   make train          → run Phase 3
-#   make pipeline       → run all phases
+#   make explain        → run Phase 4
+#   make pipeline       → run all phases end-to-end
 #   make dashboard      → launch Streamlit app
 #   make clean          → remove generated artifacts
 
-.PHONY: test test-phase1 test-phase2 test-phase3 ingest eda train pipeline dashboard clean
+.PHONY: test test-phase1 test-phase2 test-phase3 test-phase4 \
+        ingest eda train explain pipeline dashboard clean
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 test:
@@ -30,6 +33,9 @@ test-phase2:
 test-phase3:
 	python -m pytest tests/test_train.py -v
 
+test-phase4:
+	python -m pytest tests/test_explain.py -v
+
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 ingest:
 	python run_pipeline.py --phase 1
@@ -39,6 +45,9 @@ eda:
 
 train:
 	python run_pipeline.py --phase 3
+
+explain:
+	python run_pipeline.py --phase 4
 
 pipeline:
 	python run_pipeline.py

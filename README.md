@@ -7,6 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11.9-blue)
 ![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-red)
 ![XGBoost](https://img.shields.io/badge/Model-XGBoost-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
@@ -29,22 +30,24 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 | Data Ingestion | SQLite · SQLAlchemy · pandas |
 | EDA & Features | pandas · seaborn · matplotlib |
 | Modelling | XGBoost · Logistic Regression · scikit-learn |
-| Explainability | SHAP |
+| Explainability | SHAP (TreeExplainer) |
 | Dashboard | Streamlit · Plotly |
 | Deployment | Streamlit Community Cloud |
 
 ---
 
-## Model Performance (Test Set)
+## Model Performance (Test Set · 2,026 held-out customers)
 
 | Metric | Logistic Regression | XGBoost |
 |---|---|---|
-| ROC-AUC | ~0.93 | ~0.97 |
-| PR-AUC | ~0.80 | ~0.92 |
-| F1-Score | ~0.72 | ~0.89 |
-| Recall | ~0.88 | ~0.93 |
+| ROC-AUC | 0.9370 | **0.9930** |
+| PR-AUC | 0.7770 | **0.9680** |
+| F1-Score | 0.6562 | **0.9159** |
+| Recall | 0.8338 | **0.9046** |
+| Accuracy | 0.8598 | **0.9733** |
 
-*XGBoost is the production model. Logistic Regression serves as an interpretable baseline.*
+**Business impact:** XGBoost correctly identifies 293 of 325 actual churners
+in the test set → **$87,900 retention value per cycle** at $300 avg acquisition cost.
 
 ---
 
@@ -53,13 +56,13 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 ```
 card-retention-intelligence/
 ├── data/
-│   ├── raw/                    # Original BankChurners.csv (not tracked)
+│   ├── raw/                    # BankChurners.csv (not tracked)
 │   └── processed/              # Ingested, engineered, train/test splits
 ├── database/                   # SQLite database (not tracked)
-├── models/                     # Saved models + scaler
-│   ├── xgboost_model.pkl
-│   ├── logreg_model.pkl
-│   └── scaler.pkl
+├── models/
+│   ├── xgboost_model.pkl       # Production model
+│   ├── logreg_model.pkl        # Baseline model
+│   └── scaler.pkl              # Fitted StandardScaler
 ├── src/
 │   ├── logger.py               # Shared loguru logger
 │   ├── ingestion.py            # Phase 1: CSV → SQLite
@@ -67,17 +70,20 @@ card-retention-intelligence/
 │   ├── features.py             # Phase 2: Feature engineering
 │   ├── train.py                # Phase 3: Model training + CV
 │   ├── evaluate.py             # Phase 3: Metrics + evaluation plots
-│   └── explain.py              # Phase 4: SHAP values
+│   └── explain.py              # Phase 4: SHAP values + 4 plots
 ├── dashboard/
 │   └── app.py                  # Phase 5: Streamlit app
-├── tests/                      # pytest test suite (50+ tests)
+├── tests/                      # 80+ pytest tests across 4 phases
 ├── outputs/
-│   ├── figures/                # 15 saved plots (EDA + evaluation)
+│   ├── figures/                # 19 saved plots (EDA + eval + SHAP)
+│   ├── shap_values.npy         # Precomputed SHAP values (dashboard)
+│   ├── shap_expected_value.npy # SHAP baseline (dashboard)
+│   ├── shap_feature_names.json # Feature reference (dashboard)
 │   ├── model_comparison.csv    # CV results
 │   └── test_metrics.csv        # Final test-set metrics
 ├── logs/                       # Runtime logs (not tracked)
-├── Makefile                    # Convenience commands
-├── run_pipeline.py             # Master orchestrator
+├── Makefile
+├── run_pipeline.py
 └── requirements.txt
 ```
 
@@ -105,27 +111,49 @@ python -m streamlit run dashboard/app.py
 - [x] Phase 1 — Data Ingestion (CSV → SQLite)
 - [x] Phase 2 — EDA & Feature Engineering
 - [x] Phase 3 — Model Training & Evaluation (XGBoost + Logistic Regression)
-- [ ] Phase 4 — SHAP Explainability
+- [x] Phase 4 — SHAP Explainability
 - [ ] Phase 5 — Streamlit Business Dashboard
 - [ ] Phase 6 — Deployment (Streamlit Community Cloud)
 
 ---
 
-## Modelling Decisions
+## SHAP Explainability
 
-**Why two models?**
-Logistic Regression establishes an interpretable baseline. XGBoost is the production
-model. Comparing them demonstrates understanding of the accuracy vs interpretability
-tradeoff — a key data science interview topic.
+SHAP (SHapley Additive exPlanations) answers the question retention teams
+actually care about: *why* was this customer flagged as high risk?
 
-**Why not SMOTE for class imbalance?**
-SMOTE generates synthetic samples that can leak into test folds if not handled
-carefully inside cross-validation pipelines. `class_weight='balanced'` and
-`scale_pos_weight` achieve the same effect with zero leakage risk.
+Four plots covering three storytelling levels:
 
-**Why ROC-AUC as primary metric?**
-With 16% churn, accuracy is misleading — a model predicting all "retained" achieves
-84% accuracy while being useless. ROC-AUC measures the model's ability to rank
-churners above non-churners regardless of classification threshold.
+| Level | Plot | What it answers |
+|---|---|---|
+| Global | SHAP Summary (beeswarm) | Which features matter most, and in which direction? |
+| Global | SHAP Importance Bar | Clean feature ranking by mean absolute SHAP |
+| Local | SHAP Waterfall | Why was this specific customer flagged? |
+| Interaction | SHAP Dependence | How does transaction count drive churn risk? |
+
+**Key insight from SHAP:** Customers with fewer than ~40 annual transactions
+show a sharp step-change in churn SHAP values — a threshold that directly
+informs a business intervention rule.
 
 ---
+
+## Modelling Decisions
+
+**Why two models?** Logistic Regression establishes an interpretable baseline.
+XGBoost is the production model. The gap (AUC 0.937 → 0.993) demonstrates that
+non-linear patterns exist and are worth capturing.
+
+**Why not SMOTE?** `class_weight='balanced'` and `scale_pos_weight` handle
+imbalance without leakage risk from synthetic sample generation.
+
+**Why ROC-AUC as primary metric?** With 16% churn, accuracy is misleading —
+an all-"retained" model achieves 84% accuracy while being useless.
+
+**Why TreeExplainer for SHAP?** Exact SHAP values in milliseconds vs
+KernelExplainer which takes minutes and only approximates.
+
+---
+
+## License
+
+MIT
