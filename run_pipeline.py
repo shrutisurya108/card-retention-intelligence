@@ -3,13 +3,11 @@ run_pipeline.py
 ---------------
 Master pipeline orchestrator for ChurnShield.
 
-Each phase adds one step here. Running this file executes the
-complete pipeline end-to-end in the correct order.
-
 Usage:
     python run_pipeline.py              # run all phases
-    python run_pipeline.py --phase 1   # run a specific phase only
-    python run_pipeline.py --phase 2   # run Phase 2 only
+    python run_pipeline.py --phase 1   # Phase 1 only
+    python run_pipeline.py --phase 2   # Phase 2 only
+    python run_pipeline.py --phase 3   # Phase 3 only
 """
 
 import sys
@@ -32,11 +30,18 @@ def run_phase_2():
     run_feature_engineering()
 
 
+def run_phase_3():
+    from src.train import run_training
+    from src.evaluate import run_evaluation
+    run_training()
+    run_evaluation()
+
+
 # ── Phase registry ────────────────────────────────────────────────────────────
 PHASES = {
     1: ("Data Ingestion",            run_phase_1),
     2: ("EDA & Feature Engineering", run_phase_2),
-    # 3: ("Model Training",           run_phase_3),   # added in Phase 3
+    3: ("Model Training & Evaluation", run_phase_3),
     # 4: ("SHAP Explainability",      run_phase_4),   # added in Phase 4
 }
 

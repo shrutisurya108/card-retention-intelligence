@@ -7,7 +7,6 @@
 ![Python](https://img.shields.io/badge/Python-3.11.9-blue)
 ![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-red)
 ![XGBoost](https://img.shields.io/badge/Model-XGBoost-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
@@ -36,29 +35,47 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 
 ---
 
+## Model Performance (Test Set)
+
+| Metric | Logistic Regression | XGBoost |
+|---|---|---|
+| ROC-AUC | ~0.93 | ~0.97 |
+| PR-AUC | ~0.80 | ~0.92 |
+| F1-Score | ~0.72 | ~0.89 |
+| Recall | ~0.88 | ~0.93 |
+
+*XGBoost is the production model. Logistic Regression serves as an interpretable baseline.*
+
+---
+
 ## Project Structure
 
 ```
 card-retention-intelligence/
 ├── data/
 │   ├── raw/                    # Original BankChurners.csv (not tracked)
-│   └── processed/              # Cleaned + feature-engineered data
+│   └── processed/              # Ingested, engineered, train/test splits
 ├── database/                   # SQLite database (not tracked)
-├── notebooks/                  # Exploratory scratch work
+├── models/                     # Saved models + scaler
+│   ├── xgboost_model.pkl
+│   ├── logreg_model.pkl
+│   └── scaler.pkl
 ├── src/
 │   ├── logger.py               # Shared loguru logger
 │   ├── ingestion.py            # Phase 1: CSV → SQLite
 │   ├── eda.py                  # Phase 2: EDA — 10 saved plots
 │   ├── features.py             # Phase 2: Feature engineering
-│   ├── train.py                # Phase 3: Model training
-│   ├── evaluate.py             # Phase 3: Metrics + comparison
+│   ├── train.py                # Phase 3: Model training + CV
+│   ├── evaluate.py             # Phase 3: Metrics + evaluation plots
 │   └── explain.py              # Phase 4: SHAP values
-├── models/                     # Saved model artifacts + scaler
 ├── dashboard/
 │   └── app.py                  # Phase 5: Streamlit app
-├── tests/                      # pytest test suite
+├── tests/                      # pytest test suite (50+ tests)
+├── outputs/
+│   ├── figures/                # 15 saved plots (EDA + evaluation)
+│   ├── model_comparison.csv    # CV results
+│   └── test_metrics.csv        # Final test-set metrics
 ├── logs/                       # Runtime logs (not tracked)
-├── outputs/figures/            # Saved EDA plots (10 PNGs)
 ├── Makefile                    # Convenience commands
 ├── run_pipeline.py             # Master orchestrator
 └── requirements.txt
@@ -73,10 +90,10 @@ git clone https://github.com/YOUR_USERNAME/card-retention-intelligence.git
 cd card-retention-intelligence
 pip install -r requirements.txt
 
-# Place BankChurners.csv in data/raw/ first (download from Kaggle link above)
+# Place BankChurners.csv in data/raw/ first
 python run_pipeline.py
 
-# Launch dashboard (Phase 5)
+# Launch dashboard
 python -m streamlit run dashboard/app.py
 ```
 
@@ -87,52 +104,28 @@ python -m streamlit run dashboard/app.py
 - [x] Phase 0 — Project Setup & Structure
 - [x] Phase 1 — Data Ingestion (CSV → SQLite)
 - [x] Phase 2 — EDA & Feature Engineering
-- [ ] Phase 3 — Model Training & Evaluation (XGBoost + Logistic Regression)
+- [x] Phase 3 — Model Training & Evaluation (XGBoost + Logistic Regression)
 - [ ] Phase 4 — SHAP Explainability
 - [ ] Phase 5 — Streamlit Business Dashboard
 - [ ] Phase 6 — Deployment (Streamlit Community Cloud)
 
 ---
 
-## EDA Outputs
+## Modelling Decisions
 
-Ten plots saved to `outputs/figures/`:
+**Why two models?**
+Logistic Regression establishes an interpretable baseline. XGBoost is the production
+model. Comparing them demonstrates understanding of the accuracy vs interpretability
+tradeoff — a key data science interview topic.
 
-| Plot | File |
-|---|---|
-| Churn class distribution | `churn_distribution.png` |
-| Age distribution by churn | `age_distribution.png` |
-| Churn rate by age group | `churn_by_age.png` |
-| Credit limit (raw vs log) | `credit_limit_dist.png` |
-| Transaction count vs churn | `trans_count_vs_churn.png` |
-| Feature correlation heatmap | `correlation_heatmap.png` |
-| Churn rate by segment | `churn_by_category.png` |
-| All numeric distributions | `numeric_distributions.png` |
-| Utilisation ratio vs churn | `utilisation_vs_churn.png` |
-| Contact frequency vs churn | `contacts_vs_churn.png` |
+**Why not SMOTE for class imbalance?**
+SMOTE generates synthetic samples that can leak into test folds if not handled
+carefully inside cross-validation pipelines. `class_weight='balanced'` and
+`scale_pos_weight` achieve the same effect with zero leakage risk.
 
----
-
-## Feature Engineering Decisions
-
-| Transformation | Reason |
-|---|---|
-| Drop `CLIENTNUM` | ID column — no predictive value |
-| Binary encode `Gender` | Simple M/F mapping |
-| Ordinal encode `Education_Level`, `Income_Category` | Natural order exists |
-| One-hot encode `Marital_Status`, `Card_Category` | No natural order |
-| Log-transform `Credit_Limit`, `Avg_Open_To_Buy`, `Total_Trans_Amt` | Right-skewed (confirmed in EDA) |
-| Engineer `transaction_velocity` | Avg spend per transaction — compound signal |
-| Engineer `inactivity_risk` | Inactive × contacts — frustration signal |
-| Engineer `credit_usage_gap` | Actual credit used — cleaner than raw utilisation |
-| StandardScaler on all numeric | Required for logistic regression |
-
----
-
-## Dataset Notes
-
-The raw `BankChurners.csv` contains two Naive Bayes classifier output columns
-injected by the original dataset author. These are dropped during ingestion to
-prevent **data leakage**.
+**Why ROC-AUC as primary metric?**
+With 16% churn, accuracy is misleading — a model predicting all "retained" achieves
+84% accuracy while being useless. ROC-AUC measures the model's ability to rank
+churners above non-churners regardless of classification threshold.
 
 ---

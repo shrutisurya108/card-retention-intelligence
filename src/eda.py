@@ -37,14 +37,13 @@ DB_PATH     = ROOT_DIR / "database" / "churn.db"
 DB_URL      = f"sqlite:///{DB_PATH}"
 FIGURES_DIR = ROOT_DIR / "outputs" / "figures"
 
-# ── Colour constants (used consistently across all plots) ─────────────────────
-CLR_CHURN    = "#E74C3C"   # red    — churned customers
-CLR_RETAIN   = "#2ECC71"   # green  — retained customers
-CLR_PALETTE  = [CLR_RETAIN, CLR_CHURN]
-CLR_HEATMAP  = "coolwarm"
-PLOT_DPI     = 300
+# ── Colour constants ──────────────────────────────────────────────────────────
+CLR_CHURN   = "#E74C3C"
+CLR_RETAIN  = "#2ECC71"
+CLR_PALETTE = [CLR_RETAIN, CLR_CHURN]
+CLR_HEATMAP = "coolwarm"
+PLOT_DPI    = 300
 
-# ── Seaborn global style ──────────────────────────────────────────────────────
 sns.set_theme(style="whitegrid", font_scale=1.1)
 
 
@@ -74,11 +73,6 @@ def save_figure(fig: plt.Figure, filename: str) -> None:
 # ── Plot 1: Churn class distribution ─────────────────────────────────────────
 
 def plot_churn_distribution(df: pd.DataFrame) -> None:
-    """
-    Bar chart of churned vs retained customers.
-    Annotates each bar with count and percentage.
-    Key insight: ~16% churn rate — class imbalance that must be handled in modelling.
-    """
     counts = df["churn"].value_counts().sort_index()
     labels = ["Retained", "Churned"]
     total  = len(df)
@@ -106,18 +100,16 @@ def plot_churn_distribution(df: pd.DataFrame) -> None:
 # ── Plot 2: Customer age distribution ────────────────────────────────────────
 
 def plot_age_distribution(df: pd.DataFrame) -> None:
-    """
-    Overlapping KDE + histogram of customer age split by churn status.
-    Shows whether age is a discriminating feature.
-    """
     fig, ax = plt.subplots(figsize=(9, 5))
 
     for churn_val, label, colour in zip([0, 1], ["Retained", "Churned"], CLR_PALETTE):
         subset = df[df["churn"] == churn_val]["Customer_Age"]
-        ax.hist(subset, bins=20, alpha=0.4, color=colour, density=True, label=f"{label} (n={len(subset):,})")
+        ax.hist(subset, bins=20, alpha=0.4, color=colour, density=True,
+                label=f"{label} (n={len(subset):,})")
         subset.plot.kde(ax=ax, color=colour, linewidth=2)
 
-    ax.set_title("Customer Age Distribution by Churn Status", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title("Customer Age Distribution by Churn Status",
+                 fontsize=14, fontweight="bold", pad=15)
     ax.set_xlabel("Customer Age")
     ax.set_ylabel("Density")
     ax.legend()
@@ -128,10 +120,6 @@ def plot_age_distribution(df: pd.DataFrame) -> None:
 # ── Plot 3: Churn rate by age group ──────────────────────────────────────────
 
 def plot_churn_by_age_group(df: pd.DataFrame) -> None:
-    """
-    Bar chart of churn rate (%) across age bins.
-    Interview point: shows whether certain age groups are higher risk.
-    """
     df = df.copy()
     df["age_group"] = pd.cut(
         df["Customer_Age"],
@@ -147,11 +135,9 @@ def plot_churn_by_age_group(df: pd.DataFrame) -> None:
         color=CLR_CHURN, alpha=0.8, edgecolor="white"
     )
     for bar, val in zip(bars, churn_by_age.values):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.2,
-            f"{val:.1f}%", ha="center", va="bottom", fontsize=10
-        )
+        ax.text(bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.2,
+                f"{val:.1f}%", ha="center", va="bottom", fontsize=10)
 
     ax.axhline(df["churn"].mean() * 100, color="navy", linestyle="--",
                linewidth=1.5, label=f"Overall avg ({df['churn'].mean()*100:.1f}%)")
@@ -166,13 +152,8 @@ def plot_churn_by_age_group(df: pd.DataFrame) -> None:
 # ── Plot 4: Credit limit distribution ────────────────────────────────────────
 
 def plot_credit_limit_distribution(df: pd.DataFrame) -> None:
-    """
-    Side-by-side box plots of credit limit by churn status.
-    Right-skewed distribution — motivates log transform in feature engineering.
-    """
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # Raw distribution
     for churn_val, label, colour in zip([0, 1], ["Retained", "Churned"], CLR_PALETTE):
         subset = df[df["churn"] == churn_val]["Credit_Limit"]
         axes[0].hist(subset, bins=30, alpha=0.5, color=colour, label=label, density=True)
@@ -181,7 +162,6 @@ def plot_credit_limit_distribution(df: pd.DataFrame) -> None:
     axes[0].set_ylabel("Density")
     axes[0].legend()
 
-    # Log-transformed
     for churn_val, label, colour in zip([0, 1], ["Retained", "Churned"], CLR_PALETTE):
         subset = np.log1p(df[df["churn"] == churn_val]["Credit_Limit"])
         axes[1].hist(subset, bins=30, alpha=0.5, color=colour, label=label, density=True)
@@ -200,26 +180,31 @@ def plot_credit_limit_distribution(df: pd.DataFrame) -> None:
 
 def plot_transaction_count_vs_churn(df: pd.DataFrame) -> None:
     """
-    Box + strip plot of total transaction count by churn.
-    One of the strongest predictors — churned customers transact far less.
+    FutureWarning fix: assign x variable to hue and set legend=False
+    instead of passing palette without hue.
     """
     fig, ax = plt.subplots(figsize=(8, 5))
     plot_df = df[["Total_Trans_Ct", "churn"]].copy()
     plot_df["Status"] = plot_df["churn"].map({0: "Retained", 1: "Churned"})
 
+    palette = {"Retained": CLR_RETAIN, "Churned": CLR_CHURN}
+
     sns.boxplot(
         data=plot_df, x="Status", y="Total_Trans_Ct",
-        palette={"Retained": CLR_RETAIN, "Churned": CLR_CHURN},
-        width=0.4, ax=ax, order=["Retained", "Churned"]
+        hue="Status", palette=palette,
+        width=0.4, ax=ax, order=["Retained", "Churned"],
+        legend=False
     )
     sns.stripplot(
         data=plot_df.sample(min(500, len(plot_df)), random_state=42),
         x="Status", y="Total_Trans_Ct",
-        palette={"Retained": CLR_RETAIN, "Churned": CLR_CHURN},
-        alpha=0.3, size=3, ax=ax, order=["Retained", "Churned"]
+        hue="Status", palette=palette,
+        alpha=0.3, size=3, ax=ax, order=["Retained", "Churned"],
+        legend=False
     )
 
-    ax.set_title("Transaction Count by Churn Status", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title("Transaction Count by Churn Status",
+                 fontsize=14, fontweight="bold", pad=15)
     ax.set_xlabel("Customer Status")
     ax.set_ylabel("Total Transaction Count (12 months)")
     sns.despine()
@@ -229,24 +214,17 @@ def plot_transaction_count_vs_churn(df: pd.DataFrame) -> None:
 # ── Plot 6: Correlation heatmap ───────────────────────────────────────────────
 
 def plot_correlation_heatmap(df: pd.DataFrame) -> None:
-    """
-    Heatmap of Pearson correlations between all numeric features.
-    Used to detect multicollinearity before modelling.
-    Interview point: Credit_Limit and Avg_Open_To_Buy are highly correlated
-    — we address this in feature engineering.
-    """
-    numeric_df = df.select_dtypes(include="number").drop(columns=["CLIENTNUM"], errors="ignore")
+    numeric_df = df.select_dtypes(include="number").drop(columns=["CLIENTNUM"],
+                                                          errors="ignore")
     corr = numeric_df.corr()
 
     fig, ax = plt.subplots(figsize=(14, 11))
-    mask = np.triu(np.ones_like(corr, dtype=bool))  # show lower triangle only
+    mask = np.triu(np.ones_like(corr, dtype=bool))
 
     sns.heatmap(
         corr, mask=mask, annot=True, fmt=".2f",
-        cmap=CLR_HEATMAP, center=0,
-        square=True, linewidths=0.5,
-        cbar_kws={"shrink": 0.8},
-        ax=ax, annot_kws={"size": 8}
+        cmap=CLR_HEATMAP, center=0, square=True, linewidths=0.5,
+        cbar_kws={"shrink": 0.8}, ax=ax, annot_kws={"size": 8}
     )
     ax.set_title("Feature Correlation Heatmap", fontsize=14, fontweight="bold", pad=15)
     plt.xticks(rotation=45, ha="right", fontsize=9)
@@ -257,11 +235,6 @@ def plot_correlation_heatmap(df: pd.DataFrame) -> None:
 # ── Plot 7: Churn rate by categorical features ───────────────────────────────
 
 def plot_churn_by_category(df: pd.DataFrame) -> None:
-    """
-    Grid of bar charts showing churn rate broken down by:
-    Income Category, Education Level, Card Category, Marital Status.
-    Reveals which customer segments are highest risk.
-    """
     cat_cols = ["Income_Category", "Education_Level", "Card_Category", "Marital_Status"]
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     axes = axes.flatten()
@@ -271,17 +244,12 @@ def plot_churn_by_category(df: pd.DataFrame) -> None:
             df.groupby(col)["churn"].mean() * 100
         ).sort_values(ascending=False)
 
-        bars = ax.bar(
-            range(len(churn_rates)),
-            churn_rates.values,
-            color=CLR_CHURN, alpha=0.8, edgecolor="white"
-        )
+        bars = ax.bar(range(len(churn_rates)), churn_rates.values,
+                      color=CLR_CHURN, alpha=0.8, edgecolor="white")
         for bar, val in zip(bars, churn_rates.values):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                bar.get_height() + 0.2,
-                f"{val:.1f}%", ha="center", va="bottom", fontsize=9
-            )
+            ax.text(bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.2,
+                    f"{val:.1f}%", ha="center", va="bottom", fontsize=9)
         ax.set_xticks(range(len(churn_rates)))
         ax.set_xticklabels(churn_rates.index, rotation=30, ha="right", fontsize=9)
         ax.set_title(f"Churn Rate by {col.replace('_', ' ')}", fontweight="bold")
@@ -298,10 +266,6 @@ def plot_churn_by_category(df: pd.DataFrame) -> None:
 # ── Plot 8: Numeric feature distributions ────────────────────────────────────
 
 def plot_numeric_distributions(df: pd.DataFrame) -> None:
-    """
-    Grid of histograms for all key numeric features, coloured by churn status.
-    Gives a compact overview of all distributions in one figure.
-    """
     numeric_cols = [
         "Customer_Age", "Months_on_book", "Credit_Limit",
         "Total_Trans_Amt", "Total_Trans_Ct", "Avg_Utilization_Ratio",
@@ -313,10 +277,8 @@ def plot_numeric_distributions(df: pd.DataFrame) -> None:
     for ax, col in zip(axes, numeric_cols):
         for churn_val, label, colour in zip([0, 1], ["Retained", "Churned"], CLR_PALETTE):
             subset = df[df["churn"] == churn_val][col]
-            ax.hist(subset, bins=25, alpha=0.5, color=colour,
-                    label=label, density=True)
+            ax.hist(subset, bins=25, alpha=0.5, color=colour, label=label, density=True)
         ax.set_title(col.replace("_", " "), fontsize=9, fontweight="bold")
-        ax.set_xlabel("")
         ax.set_ylabel("Density")
         ax.tick_params(labelsize=8)
 
@@ -330,19 +292,17 @@ def plot_numeric_distributions(df: pd.DataFrame) -> None:
 # ── Plot 9: Utilisation ratio vs churn ───────────────────────────────────────
 
 def plot_utilisation_vs_churn(df: pd.DataFrame) -> None:
-    """
-    Violin plot of Avg_Utilization_Ratio by churn status.
-    Key SHAP feature — churned customers cluster near 0 utilisation,
-    suggesting they stopped using the card before cancelling.
-    """
+    """FutureWarning fix: assign hue explicitly."""
     fig, ax = plt.subplots(figsize=(8, 5))
     plot_df = df[["Avg_Utilization_Ratio", "churn"]].copy()
     plot_df["Status"] = plot_df["churn"].map({0: "Retained", 1: "Churned"})
 
     sns.violinplot(
         data=plot_df, x="Status", y="Avg_Utilization_Ratio",
+        hue="Status",
         palette={"Retained": CLR_RETAIN, "Churned": CLR_CHURN},
-        inner="quartile", ax=ax, order=["Retained", "Churned"]
+        inner="quartile", ax=ax, order=["Retained", "Churned"],
+        legend=False
     )
     ax.set_title("Credit Utilisation Ratio by Churn Status",
                  fontsize=14, fontweight="bold", pad=15)
@@ -355,11 +315,6 @@ def plot_utilisation_vs_churn(df: pd.DataFrame) -> None:
 # ── Plot 10: Contacts count vs churn ─────────────────────────────────────────
 
 def plot_contacts_vs_churn(df: pd.DataFrame) -> None:
-    """
-    Count plot of Contacts_Count_12_mon by churn status.
-    Behavioural signal — customers who contacted the bank more frequently
-    in the last 12 months show higher churn rates (dissatisfaction signal).
-    """
     fig, ax = plt.subplots(figsize=(9, 5))
     plot_df = df[["Contacts_Count_12_mon", "churn"]].copy()
     plot_df["Status"] = plot_df["churn"].map({0: "Retained", 1: "Churned"})
@@ -382,7 +337,6 @@ def plot_contacts_vs_churn(df: pd.DataFrame) -> None:
 # ── Statistical summary ───────────────────────────────────────────────────────
 
 def log_statistical_summary(df: pd.DataFrame) -> None:
-    """Log key statistics about the dataset to the pipeline log."""
     log.info("── Statistical Summary ─────────────────────────────────")
     log.info(f"  Total customers   : {len(df):,}")
     log.info(f"  Churned           : {df['churn'].sum():,} ({df['churn'].mean()*100:.2f}%)")
@@ -391,7 +345,6 @@ def log_statistical_summary(df: pd.DataFrame) -> None:
     log.info(f"  Avg credit limit  : ${df['Credit_Limit'].mean():,.0f}")
     log.info(f"  Avg transactions  : {df['Total_Trans_Ct'].mean():.1f} / year")
     log.info(f"  Avg utilisation   : {df['Avg_Utilization_Ratio'].mean():.3f}")
-
     log.info("  Churn rate by card type:")
     for card, rate in (df.groupby("Card_Category")["churn"].mean() * 100).items():
         log.info(f"    {card:<15}: {rate:.1f}%")
@@ -421,7 +374,7 @@ def run_eda() -> None:
     plot_utilisation_vs_churn(df)
     plot_contacts_vs_churn(df)
 
-    log.info(f"All 10 plots saved to outputs/figures/")
+    log.info("All 10 plots saved to outputs/figures/")
     log.info("Phase 2a complete — EDA successful ✓")
 
 
