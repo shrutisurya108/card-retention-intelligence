@@ -1,10 +1,20 @@
-# Data & Database
+# ── Data & Database ───────────────────────────────────────────────
 data/raw/
+data/processed/
 database/
-logs/
 *.db
 
-# Python
+# ── Models (large binary files) ───────────────────────────────────
+models/*.pkl
+models/*.joblib
+
+# ── Outputs (generated — not source code) ─────────────────────────
+outputs/
+
+# ── Logs ──────────────────────────────────────────────────────────
+logs/
+
+# ── Python ────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -14,17 +24,14 @@ __pycache__/
 dist/
 build/
 
-# Models (large files — use Git LFS or exclude)
-models/*.pkl
-models/*.joblib
-
-# Jupyter
+# ── Jupyter ───────────────────────────────────────────────────────
 .ipynb_checkpoints/
 
-# OS
+# ── OS ────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# Env
+# ── Environment ───────────────────────────────────────────────────
 .env
 *.env
+.python-version

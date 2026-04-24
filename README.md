@@ -7,6 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11.9-blue)
 ![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-red)
 ![XGBoost](https://img.shields.io/badge/Model-XGBoost-green)
+![SHAP](https://img.shields.io/badge/Explainability-SHAP-orange)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
@@ -19,7 +20,21 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 
 **Dataset:** [Credit Card Customers — Kaggle](https://www.kaggle.com/datasets/sakshigoyal7/credit-card-customers)
 - 10,127 bank customers · 21 features · ~16% churn rate
-- Features: credit limit, transaction count, utilisation ratio, contact frequency, and more
+
+---
+
+## Live Dashboard
+
+> 🚀 **[Launch ChurnShield Dashboard](https://your-app.streamlit.app)**
+
+5 interactive pages:
+| Page | What it does |
+|---|---|
+| 📊 Executive Summary | KPI cards, ROI calculator, model comparison chart |
+| 🎯 Customer Risk Scorer | Live churn prediction + SHAP waterfall for any customer |
+| 📈 Model Performance | All evaluation plots, CV results, metrics table |
+| 🔍 SHAP Explainability | Global + local + interaction SHAP plots |
+| 🔬 EDA Explorer | Interactive histograms, all EDA plots, raw data preview |
 
 ---
 
@@ -47,7 +62,7 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 | Accuracy | 0.8598 | **0.9733** |
 
 **Business impact:** XGBoost correctly identifies 293 of 325 actual churners
-in the test set → **$87,900 retention value per cycle** at $300 avg acquisition cost.
+→ **$87,900 retention value per cycle** at $300 avg acquisition cost.
 
 ---
 
@@ -72,13 +87,13 @@ card-retention-intelligence/
 │   ├── evaluate.py             # Phase 3: Metrics + evaluation plots
 │   └── explain.py              # Phase 4: SHAP values + 4 plots
 ├── dashboard/
-│   └── app.py                  # Phase 5: Streamlit app
-├── tests/                      # 80+ pytest tests across 4 phases
+│   └── app.py                  # Phase 5: 5-page Streamlit app
+├── tests/                      # 110+ pytest tests across 5 phases
 ├── outputs/
-│   ├── figures/                # 19 saved plots (EDA + eval + SHAP)
-│   ├── shap_values.npy         # Precomputed SHAP values (dashboard)
-│   ├── shap_expected_value.npy # SHAP baseline (dashboard)
-│   ├── shap_feature_names.json # Feature reference (dashboard)
+│   ├── figures/                # 19 PNG plots (EDA + eval + SHAP)
+│   ├── shap_values.npy         # Precomputed SHAP (dashboard speed)
+│   ├── shap_expected_value.npy # SHAP baseline
+│   ├── shap_feature_names.json # Feature reference
 │   ├── model_comparison.csv    # CV results
 │   └── test_metrics.csv        # Final test-set metrics
 ├── logs/                       # Runtime logs (not tracked)
@@ -96,10 +111,11 @@ git clone https://github.com/YOUR_USERNAME/card-retention-intelligence.git
 cd card-retention-intelligence
 pip install -r requirements.txt
 
-# Place BankChurners.csv in data/raw/ first
+# 1. Place BankChurners.csv in data/raw/
+# 2. Run full pipeline
 python run_pipeline.py
 
-# Launch dashboard
+# 3. Launch dashboard
 python -m streamlit run dashboard/app.py
 ```
 
@@ -112,45 +128,27 @@ python -m streamlit run dashboard/app.py
 - [x] Phase 2 — EDA & Feature Engineering
 - [x] Phase 3 — Model Training & Evaluation (XGBoost + Logistic Regression)
 - [x] Phase 4 — SHAP Explainability
-- [ ] Phase 5 — Streamlit Business Dashboard
+- [x] Phase 5 — Streamlit Business Dashboard
 - [ ] Phase 6 — Deployment (Streamlit Community Cloud)
 
 ---
 
-## SHAP Explainability
+## Key Design Decisions
 
-SHAP (SHapley Additive exPlanations) answers the question retention teams
-actually care about: *why* was this customer flagged as high risk?
+**Why two models?** XGBoost is production. Logistic Regression is the interpretable
+baseline. The AUC gap (0.937 → 0.993) proves non-linear patterns exist and matter.
 
-Four plots covering three storytelling levels:
+**Why not SMOTE?** `class_weight` and `scale_pos_weight` handle imbalance without
+leakage risk from synthetic sample generation inside CV folds.
 
-| Level | Plot | What it answers |
-|---|---|---|
-| Global | SHAP Summary (beeswarm) | Which features matter most, and in which direction? |
-| Global | SHAP Importance Bar | Clean feature ranking by mean absolute SHAP |
-| Local | SHAP Waterfall | Why was this specific customer flagged? |
-| Interaction | SHAP Dependence | How does transaction count drive churn risk? |
+**Why TreeExplainer for SHAP?** Exact values in milliseconds. KernelExplainer
+approximates and takes minutes.
 
-**Key insight from SHAP:** Customers with fewer than ~40 annual transactions
-show a sharp step-change in churn SHAP values — a threshold that directly
-informs a business intervention rule.
+**Why precompute SHAP values?** Dashboard responsiveness. Loading `.npy` takes
+milliseconds; recomputing for 2,026 samples takes 30 seconds.
 
----
-
-## Modelling Decisions
-
-**Why two models?** Logistic Regression establishes an interpretable baseline.
-XGBoost is the production model. The gap (AUC 0.937 → 0.993) demonstrates that
-non-linear patterns exist and are worth capturing.
-
-**Why not SMOTE?** `class_weight='balanced'` and `scale_pos_weight` handle
-imbalance without leakage risk from synthetic sample generation.
-
-**Why ROC-AUC as primary metric?** With 16% churn, accuracy is misleading —
-an all-"retained" model achieves 84% accuracy while being useless.
-
-**Why TreeExplainer for SHAP?** Exact SHAP values in milliseconds vs
-KernelExplainer which takes minutes and only approximates.
+**Why Stratified K-Fold?** With 16% churn, regular KFold risks putting all churners
+in one fold. Stratified guarantees each fold reflects the true class distribution.
 
 ---
 

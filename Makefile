@@ -4,20 +4,21 @@
 # Always routes through `python` (pyenv-managed 3.11.9).
 #
 # Usage:
-#   make test           → run all tests
-#   make test-phase1    → Phase 1 tests only
-#   make test-phase2    → Phase 2 tests only
-#   make test-phase3    → Phase 3 tests only
-#   make test-phase4    → Phase 4 tests only
-#   make ingest         → run Phase 1
-#   make eda            → run Phase 2
-#   make train          → run Phase 3
-#   make explain        → run Phase 4
-#   make pipeline       → run all phases end-to-end
-#   make dashboard      → launch Streamlit app
-#   make clean          → remove generated artifacts
+#   make test            → run all tests
+#   make test-phase1     → Phase 1 tests only
+#   make test-phase2     → Phase 2 tests only
+#   make test-phase3     → Phase 3 tests only
+#   make test-phase4     → Phase 4 tests only
+#   make test-phase5     → Phase 5 pre-flight tests only
+#   make ingest          → run Phase 1
+#   make eda             → run Phase 2
+#   make train           → run Phase 3
+#   make explain         → run Phase 4
+#   make pipeline        → run all pipeline phases (1-4)
+#   make dashboard       → launch Streamlit dashboard
+#   make clean           → remove generated artifacts
 
-.PHONY: test test-phase1 test-phase2 test-phase3 test-phase4 \
+.PHONY: test test-phase1 test-phase2 test-phase3 test-phase4 test-phase5 \
         ingest eda train explain pipeline dashboard clean
 
 # ── Testing ───────────────────────────────────────────────────────────────────
@@ -35,6 +36,9 @@ test-phase3:
 
 test-phase4:
 	python -m pytest tests/test_explain.py -v
+
+test-phase5:
+	python -m pytest tests/test_dashboard.py -v
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 ingest:
