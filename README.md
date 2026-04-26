@@ -25,7 +25,7 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 
 ## Live Dashboard
 
-> 🚀 **[Launch ChurnShield Dashboard](https://your-app.streamlit.app)**
+> 🚀 **[Launch ChurnShield Dashboard](https://card-retention-intelligence-pipeline.streamlit.app)**
 
 5 interactive pages:
 | Page | What it does |
