@@ -1,7 +1,7 @@
 """
 logger.py
 ---------
-Centralised logging setup for the ChurnShield pipeline.
+Centralised logging setup for the Card-Retention-Intelligence pipeline.
 Uses loguru for structured, timestamped logs written to both
 the console (stdout) and a persistent log file.
 

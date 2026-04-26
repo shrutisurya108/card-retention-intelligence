@@ -1,7 +1,7 @@
 """
 run_pipeline.py
 ---------------
-Master pipeline orchestrator for ChurnShield.
+Master pipeline orchestrator for Card-Retention-Intelligence.
 
 Usage:
     python run_pipeline.py              # run all phases
@@ -55,7 +55,7 @@ PHASES = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="ChurnShield ML Pipeline — card-retention-intelligence"
+        description="Card-Retention-Intelligence ML Pipeline — card-retention-intelligence"
     )
     parser.add_argument(
         "--phase",
@@ -72,7 +72,7 @@ def main():
     phases = {args.phase: PHASES[args.phase]} if args.phase else PHASES
 
     log.info("╔══════════════════════════════════════════════════════╗")
-    log.info("║       ChurnShield — ML Pipeline Starting             ║")
+    log.info("║           Card-Retention-Intelligence                ║")
     log.info("╚══════════════════════════════════════════════════════╝")
 
     for phase_num, (phase_name, phase_fn) in phases.items():

@@ -1,7 +1,7 @@
 """
 app.py
 ------
-Phase 5 — ChurnShield Streamlit Dashboard
+Phase 5 — Card-Retention-Intelligence Streamlit Dashboard
 
 5-page interactive business intelligence application:
   Page 1 — Executive Summary      : KPIs, ROI calculator, overview charts
@@ -52,7 +52,7 @@ CLR_ACCENT = "#3498DB"
 # ══════════════════════════════════════════════════════════════════════════════
 
 st.set_page_config(
-    page_title="ChurnShield — Customer Retention Intelligence",
+    page_title="Card-Retention-Intelligence — Customer Retention Intelligence",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -243,7 +243,7 @@ def show_image(img):
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown("# 🛡️ ChurnShield")
+        st.markdown("# 🛡️ Card-Retention-Intelligence")
         st.markdown("*Customer Retention Intelligence*")
         st.markdown("---")
 
@@ -292,7 +292,7 @@ PLOTLY_BASE = dict(
 
 def page_executive_summary():
     st.title("📊 Executive Summary")
-    st.markdown("*ChurnShield — ML-Powered Customer Retention Intelligence Platform*")
+    st.markdown("*Card-Retention-Intelligence — ML-Powered Customer Retention Intelligence Platform*")
 
     metrics_df  = load_metrics()
     df_raw      = load_ingested_data()
@@ -431,7 +431,7 @@ def page_executive_summary():
 
     st.markdown(
         f'<div class="insight-box">💡 With XGBoost\'s {xgb_recall*100:.1f}% recall, '
-        f'ChurnShield identifies <b>{caught:,}</b> at-risk customers from a portfolio of '
+        f'Card-Retention-Intelligence identifies <b>{caught:,}</b> at-risk customers from a portfolio of '
         f'<b>{portfolio_size:,}</b>. At {intervention_rate}% intervention success, '
         f'that saves <b>${roi:,}</b> per retention cycle.</div>',
         unsafe_allow_html=True

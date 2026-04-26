@@ -1,4 +1,4 @@
-# ChurnShield 🛡️
+# Card-Retention-Intelligence 🛡️
 ### ML-Powered Customer Retention Intelligence Platform
 
 > Predicts banking customer churn with XGBoost, explains decisions with SHAP,
@@ -14,7 +14,7 @@
 
 ## Overview
 
-ChurnShield is an end-to-end machine learning pipeline that identifies at-risk
+Card-Retention-Intelligence is an end-to-end machine learning pipeline that identifies at-risk
 bank customers, quantifies business impact using ROI framing, and surfaces
 SHAP-based explanations to help retention teams act on predictions — not just trust them.
 
@@ -25,7 +25,7 @@ SHAP-based explanations to help retention teams act on predictions — not just 
 
 ## Live Dashboard
 
-> 🚀 **[Launch ChurnShield Dashboard](https://card-retention-intelligence-pipeline.streamlit.app)**
+> 🚀 **[Launch Card-Retention-Intelligence Dashboard](https://card-retention-intelligence-pipeline.streamlit.app)**
 
 5 interactive pages:
 | Page | What it does |
